@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S16 Coliving Program</title>
+  <style>
+    :root {
+      --bg: #f6f0e7;
+      --paper: #fffaf1;
+      --ink: #282018;
+      --muted: #75695d;
+      --line: rgba(70, 54, 37, .16);
+      --soft: rgba(255, 250, 241, .74);
+      --shadow: 0 18px 50px rgba(67, 46, 25, .10);
+      --radius: 22px;
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(209,122,34,.18), transparent 34rem),
+        radial-gradient(circle at 90% 10%, rgba(59,140,132,.14), transparent 32rem),
+        var(--bg);
+      color: var(--ink);
+    }
+    .shell { max-width: 1440px; margin: 0 auto; padding: 28px; }
+    header.hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+    h1 { margin: 0; font-size: clamp(34px, 5vw, 72px); letter-spacing: -0.06em; line-height: .92; }
+    .kicker { margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 800; }
+    .subtitle { max-width: 720px; margin: 14px 0 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+    .view-toggle, .filters, .day-tabs, .board-wrap, .list-wrap {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(14px);
+    }
+    .view-toggle { padding: 8px; display: flex; gap: 8px; }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #fffaf1;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    button[aria-pressed="true"], .day-tab.is-active {
+      background: var(--ink);
+      color: #fffaf1;
+      border-color: var(--ink);
+    }
+    .filters { padding: 16px; margin: 18px 0; }
+    .filter-top {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 12px 16px;
+      font: inherit;
+      background: #fffaf1;
+      color: var(--ink);
+    }
+    .filter-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .filter-group { margin-top: 12px; }
+    .filter-title { margin: 0 0 8px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; font-weight: 850; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #fffaf1;
+      user-select: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 720;
+    }
+    .chip input { accent-color: var(--ink); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dot, #999); }
+    .day-tabs { display: flex; gap: 8px; padding: 10px; overflow-x: auto; margin-bottom: 18px; }
+    .day-tab { flex: 0 0 auto; text-align: left; min-width: 132px; border-radius: 18px; padding: 12px; }
+    .day-tab strong { display: block; font-size: 20px; line-height: 1; }
+    .day-tab span { display: block; margin-top: 6px; font-size: 12px; opacity: .78; }
+    .board-wrap { overflow-x: auto; padding: 14px; }
+    .board {
+      display: grid;
+      grid-template-columns: 58px repeat(9, minmax(136px, 1fr));
+      grid-auto-rows: 30px;
+      min-width: 1320px;
+      position: relative;
+    }
+    .corner, .space-head, .time, .cell {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .space-head {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: rgba(255,250,241,.96);
+      padding: 8px;
+      min-height: 58px;
+    }
+    .space-head strong { display: block; font-size: 13px; }
+    .space-head span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.25; }
+    .time {
+      color: var(--muted);
+      font-size: 11px;
+      padding: 4px 6px 0 0;
+      text-align: right;
+      background: rgba(255,250,241,.64);
+    }
+    .cell { background: rgba(255,255,255,.25); }
+    .cell.hour { border-bottom-color: rgba(70,54,37,.28); }
+    .event {
+      margin: 3px;
+      padding: 7px 8px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--track) 68%, #fff);
+      background: color-mix(in srgb, var(--track) 12%, #fffaf1);
+      box-shadow: 0 8px 22px rgba(50,35,20,.10);
+      overflow: hidden;
+      z-index: 5;
+    }
+    .event-time { color: var(--muted); font-size: 11px; font-weight: 850; }
+    .event-title { margin-top: 3px; font-size: 12px; line-height: 1.24; font-weight: 850; }
+    .event-meta { margin-top: 5px; display: inline-flex; gap: 5px; align-items: center; color: var(--muted); font-size: 10px; }
+    .list-wrap { display: none; padding: 12px; }
+    .day-block { margin-bottom: 18px; }
+    .day-heading { margin: 10px 6px; font-size: 22px; letter-spacing: -.03em; }
+    .list-event {
+      display: grid;
+      grid-template-columns: 108px minmax(0, 1fr);
+      gap: 12px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fffaf1;
+      margin-bottom: 8px;
+    }
+    .list-time { color: var(--muted); font-weight: 850; }
+    .list-title { font-weight: 850; }
+    .list-meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 13px; }
+    .empty {
+      padding: 26px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(255,250,241,.7);
+    }
+    .footer-note { margin: 18px 4px 0; color: var(--muted); font-size: 12px; }
+    @media (max-width: 820px) {
+      .shell { padding: 18px; }
+      header.hero { grid-template-columns: 1fr; }
+      .view-toggle { justify-self: start; }
+      .filter-top { grid-template-columns: 1fr; }
+      .filter-actions { justify-content: flex-start; }
+      .board-wrap { display: none !important; }
+      .list-wrap { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div>
+        <p class="kicker">S16 Coliving · July 16–24, 2026</p>
+        <h1>Program</h1>
+        <p class="subtitle">Read-only public schedule. Use filters to hide tracks, spaces or days you do not want to see.</p>
+      </div>
+      <div class="view-toggle" aria-label="View">
+        <button id="gridView" type="button" aria-pressed="true">Grid</button>
+        <button id="listView" type="button" aria-pressed="false">List</button>
+      </div>
+    </header>
+
+    <section class="filters" aria-label="Filters">
+      <div class="filter-top">
+        <input class="search" id="search" type="search" placeholder="Search program">
+        <div class="filter-actions">
+          <button id="showAll" type="button">Show all</button>
+          <button id="hideFood" type="button">Hide food</button>
+          <button id="hideKids" type="button">Hide kids</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <p class="filter-title">Tracks</p>
+        <div class="chips" id="trackFilters"></div>
+      </div>
+      <div class="filter-group">
+        <p class="filter-title">Spaces</p>
+        <div class="chips" id="spaceFilters"></div>
+      </div>
+    </section>
+
+    <nav class="day-tabs" id="dayTabs" aria-label="Days"></nav>
+
+    <section class="board-wrap" id="boardWrap">
+      <div class="board" id="board"></div>
+    </section>
+    <section class="list-wrap" id="listWrap"></section>
+    <p class="footer-note">Last generated: <span id="generatedAt"></span>. This page is read-only; changing filters affects only your view.</p>
+  </div>
+
+  <script id="program-data" type="application/json">{"generatedAt":"2026-07-08T09:40:48.172Z","sourceUpdatedAt":"2026-07-02T12:21:39.218Z","days":[{"date":"2026-07-16","dow":"Thu","day":"16","phase":"Arrival"},{"date":"2026-07-17","dow":"Fri","day":"17","phase":"Immersion"},{"date":"2026-07-18","dow":"Sat","day":"18","phase":"Weekend"},{"date":"2026-07-19","dow":"Sun","day":"19","phase":"Weekend"},{"date":"2026-07-20","dow":"Mon","day":"20","phase":"Work week"},{"date":"2026-07-21","dow":"Tue","day":"21","phase":"Work week"},{"date":"2026-07-22","dow":"Wed","day":"22","phase":"Whiteboard"},{"date":"2026-07-23","dow":"Thu","day":"23","phase":"Closing"},{"date":"2026-07-24","dow":"Fri","day":"24","phase":"Departure"}],"spaces":[{"key":"wood-terrace","label":"Wood Terrace","includes":["forest-kids"],"note":"Kids base"},{"key":"lounge","label":"Lounge","includes":["lounge","cinema-barn","big-hall-adjacent","coworking"],"note":"Cowork, library, cinema"},{"key":"winter-garden","label":"Winter Garden","includes":["glass-workshop"],"note":"Glass room by reception"},{"key":"lagar","label":"Lagar","includes":["lagar"],"note":"Main program space"},{"key":"pool-deck","label":"Pool Deck","includes":["pool"],"note":"Pool deck"},{"key":"atmos-yoga-deck","label":"ATMOS Yoga Deck","includes":["atmos-yoga-deck","gym"],"note":"Morning practices"},{"key":"banya","label":"Banya","includes":["banya"],"note":"Banya / spa"},{"key":"main-hall","label":"Main Hall","includes":["big-hall"],"note":"Meals and central indoor gathering"},{"key":"bar","label":"Bar","includes":["front-stage","sinyok"],"note":"Bar and outdoor music"}],"tracks":{"kids":{"label":"Kids","color":"#4E8A61"},"wellness":{"label":"Wellness","color":"#3B8C84"},"creative":{"label":"Creative","color":"#B14C89"},"music":{"label":"Music","color":"#D17A22"},"useful":{"label":"Useful","color":"#C75E58"},"ritual":{"label":"Ritual","color":"#8557C6"},"food":{"label":"Food","color":"#2F7D4D"},"cowork":{"label":"Work","color":"#9B4D49"},"open":{"label":"Open / Whiteboard","color":"#6B7280"}},"events":[{"id":"kids-program-2026-07-16-01","date":"2026-07-16","start":"10:00","end":"10:30","title":"Getting-to-know-you games","originalTitle":"Игры на знакомство","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"kids-program-2026-07-16-02","date":"2026-07-16","start":"11:30","end":"12:30","title":"Liquid nitrogen cryo show: make ice cream","originalTitle":"Крио-шоу с жидким азотом. МК создаем мороженое","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"kids-program-2026-07-16-03","date":"2026-07-16","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-16-04","date":"2026-07-16","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"kids-program-2026-07-16-05","date":"2026-07-16","start":"14:30","end":"16:00","title":"Active games and slackline","originalTitle":"Подвижные игры, слеклайн","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":870},{"id":"2026-07-16-01","date":"2026-07-16","start":"15:00","end":"18:00","title":"Arrival, check-in, soft landing","originalTitle":"Arrival, check-in, soft landing","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":900},{"id":"kids-program-2026-07-16-06","date":"2026-07-16","start":"16:00","end":"17:00","title":"Arrival at DOMA","originalTitle":"Заезд в Дому","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":960},{"id":"kids-program-2026-07-16-07","date":"2026-07-16","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"2026-07-16-02","date":"2026-07-16","start":"18:00","end":"19:30","title":"First dinner + prompt cards","originalTitle":"First dinner + prompt cards","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1080},{"id":"kids-program-2026-07-16-08","date":"2026-07-16","start":"18:00","end":"19:00","title":"Pool party","originalTitle":"Пулл пати","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":1080},{"id":"kids-program-2026-07-16-09","date":"2026-07-16","start":"19:00","end":"20:30","title":"Cartoons / lounge","originalTitle":"Мультфильмы в беседке / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-16-03","date":"2026-07-16","start":"20:00","end":"21:30","title":"Opening: S16 update + canvas + pledge mirror","originalTitle":"Opening: S16 update + canvas + pledge mirror","track":"ritual","trackLabel":"Ritual","space":"lagar","spaceLabel":"Lagar","sort":1200},{"id":"2026-07-16-04","date":"2026-07-16","start":"21:30","end":"23:00","title":"Soft DJ set / hello night","originalTitle":"Soft DJ set / hello night","track":"music","trackLabel":"Music","space":"bar","spaceLabel":"Bar","sort":1290},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-17","date":"2026-07-17","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-17-01","date":"2026-07-17","start":"08:00","end":"09:00","title":"Morning practice","originalTitle":"Morning practice","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-17-02","date":"2026-07-17","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-17-10","date":"2026-07-17","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"kids-program-2026-07-17-11","date":"2026-07-17","start":"10:30","end":"11:30","title":"Acting workshop","originalTitle":"Мастер-класс \"Актерское мастерство\"","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":630},{"id":"2026-07-17-04","date":"2026-07-17","start":"11:00","end":"13:00","title":"Egor Rudi & Andrey Khusid: Art of Life in the Age of Singularity","originalTitle":"Egor Rudi & Andrey Khusid: Art of Life in the Age of Singularity","track":"useful","trackLabel":"Useful","space":"winter-garden","spaceLabel":"Winter Garden","sort":660},{"id":"kids-program-2026-07-17-12","date":"2026-07-17","start":"11:30","end":"12:30","title":"Musical instruments of the world workshop","originalTitle":"Мастер-класс \"Музыкальные инструменты всего мира\"","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"granola-2026-06-12-sinyok-hold","date":"2026-07-17","start":"12:00","end":"23:30","title":"Bar: permanent gathering point","originalTitle":"Синёк под парашютом: постоянная точка сбора","track":"open","trackLabel":"Open / Whiteboard","space":"bar","spaceLabel":"Bar","sort":720},{"id":"kids-program-2026-07-17-13","date":"2026-07-17","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-17-14","date":"2026-07-17","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"kids-program-2026-07-17-15","date":"2026-07-17","start":"14:30","end":"16:00","title":"Hike","originalTitle":"Поход","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":870},{"id":"2026-07-17-05","date":"2026-07-17","start":"14:30","end":"16:30","title":"Whiteboard slots: first participant offers","originalTitle":"Whiteboard slots: first participant offers","track":"open","trackLabel":"Open / Whiteboard","space":"lounge","spaceLabel":"Lounge","sort":870},{"id":"kids-program-2026-07-17-16","date":"2026-07-17","start":"16:00","end":"17:00","title":"Quest: In Search of Rhyme","originalTitle":"Квест \"В поисках рифмы\"","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":960},{"id":"kids-program-2026-07-17-17","date":"2026-07-17","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"2026-07-17-06","date":"2026-07-17","start":"17:30","end":"19:30","title":"Dinner","originalTitle":"Dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1050},{"id":"kids-program-2026-07-17-18","date":"2026-07-17","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"kids-program-2026-07-17-19","date":"2026-07-17","start":"19:00","end":"20:30","title":"Cartoons / lounge","originalTitle":"Мультфильмы в беседке / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-17-08","date":"2026-07-17","start":"20:30","end":"22:30","title":"Community talk / meaning night","originalTitle":"Community talk / meaning night","track":"ritual","trackLabel":"Ritual","space":"lagar","spaceLabel":"Lagar","sort":1230},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-18","date":"2026-07-18","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-18-01","date":"2026-07-18","start":"08:00","end":"09:00","title":"Pool breath / meditation","originalTitle":"Pool breath / meditation","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-18-02","date":"2026-07-18","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-18-20","date":"2026-07-18","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"kids-program-2026-07-18-21","date":"2026-07-18","start":"10:30","end":"11:30","title":"Making props for the music video","originalTitle":"Создание реквизита для клипа","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":630},{"id":"2026-07-18-04","date":"2026-07-18","start":"11:00","end":"13:00","title":"Library + arts&crafts launch","originalTitle":"Library + arts&crafts launch","track":"creative","trackLabel":"Creative","space":"lounge","spaceLabel":"Lounge","sort":660},{"id":"kids-program-2026-07-18-22","date":"2026-07-18","start":"11:30","end":"12:30","title":"Giant soap bubble interactive","originalTitle":"Интерактив с гигантскими мыльными пузырями","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"kids-program-2026-07-18-23","date":"2026-07-18","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-18-24","date":"2026-07-18","start":"13:00","end":"14:30","title":"Gingerbread decorating workshop","originalTitle":"МК роспись пряников","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":780},{"id":"kids-program-2026-07-18-25","date":"2026-07-18","start":"14:30","end":"16:00","title":"Pool games and water battle","originalTitle":"Игры у бассейна, водный баттл","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":870},{"id":"2026-07-18-05","date":"2026-07-18","start":"14:30","end":"16:30","title":"Useful workshop slot","originalTitle":"Useful workshop slot","track":"useful","trackLabel":"Useful","space":"winter-garden","spaceLabel":"Winter Garden","sort":870},{"id":"kids-program-2026-07-18-26","date":"2026-07-18","start":"16:00","end":"17:00","title":"Songwriting","originalTitle":"Пишем песню","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":960},{"id":"2026-07-18-06","date":"2026-07-18","start":"16:30","end":"18:00","title":"Pool social / DJ light","originalTitle":"Pool social / DJ light","track":"music","trackLabel":"Music","space":"pool-deck","spaceLabel":"Pool Deck","sort":990},{"id":"kids-program-2026-07-18-27","date":"2026-07-18","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"kids-program-2026-07-18-28","date":"2026-07-18","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"2026-07-18-07","date":"2026-07-18","start":"18:00","end":"20:00","title":"Dinner","originalTitle":"Dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1080},{"id":"kids-program-2026-07-18-29","date":"2026-07-18","start":"19:00","end":"20:30","title":"Cartoons / lounge","originalTitle":"Мультфильмы в беседке / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-18-09","date":"2026-07-18","start":"21:00","end":"23:30","title":"Denis: evening music","originalTitle":"Денис: evening music","track":"music","trackLabel":"Music","space":"lagar","spaceLabel":"Lagar","sort":1260},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-19","date":"2026-07-19","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-19-01","date":"2026-07-19","start":"08:00","end":"09:00","title":"Morning training","originalTitle":"Morning training","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-19-02","date":"2026-07-19","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-19-30","date":"2026-07-19","start":"10:00","end":"11:30","title":"Disco warm-up, vocal warm-up and stage speech","originalTitle":"Диско-зарядка, распевка, сценическая речь","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"2026-07-19-04","date":"2026-07-19","start":"10:30","end":"12:00","title":"Gentle parenting panel","originalTitle":"Gentle parenting panel","track":"useful","trackLabel":"Useful","space":"winter-garden","spaceLabel":"Winter Garden","sort":630},{"id":"kids-program-2026-07-19-31","date":"2026-07-19","start":"11:30","end":"12:30","title":"Recording studio","originalTitle":"Студия звукозаписи","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"kids-program-2026-07-19-32","date":"2026-07-19","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-19-33","date":"2026-07-19","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"2026-07-19-05","date":"2026-07-19","start":"14:30","end":"16:30","title":"Pool party / Yulia DJ","originalTitle":"Pool party / Юля DJ","track":"music","trackLabel":"Music","space":"pool-deck","spaceLabel":"Pool Deck","sort":870},{"id":"kids-program-2026-07-19-34","date":"2026-07-19","start":"14:30","end":"17:00","title":"Walk and music video shoot","originalTitle":"Прогулка, съемка клипа","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":870},{"id":"kids-program-2026-07-19-35","date":"2026-07-19","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"2026-07-19-06","date":"2026-07-19","start":"17:30","end":"19:30","title":"Dinner","originalTitle":"Dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1050},{"id":"kids-program-2026-07-19-36","date":"2026-07-19","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"kids-program-2026-07-19-37","date":"2026-07-19","start":"19:00","end":"20:30","title":"Family jam / lounge","originalTitle":"Семейный джем / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-19-08","date":"2026-07-19","start":"20:30","end":"23:00","title":"Ivan Latyshev: live / DJ evening","originalTitle":"Иван Латышев: live/DJ evening","track":"music","trackLabel":"Music","space":"lagar","spaceLabel":"Lagar","sort":1230},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-20","date":"2026-07-20","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-20-01","date":"2026-07-20","start":"08:00","end":"09:00","title":"S16 Mornings / routines","originalTitle":"S16 Mornings / routines","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-20-02","date":"2026-07-20","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-20-38","date":"2026-07-20","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"kids-program-2026-07-20-39","date":"2026-07-20","start":"10:30","end":"11:30","title":"Scarf painting workshop","originalTitle":"МК расписываем платки","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":630},{"id":"2026-07-20-04","date":"2026-07-20","start":"11:30","end":"13:00","title":"Anton: talk about happiness","originalTitle":"Антон: лекция про счастье","track":"wellness","trackLabel":"Wellness","space":"winter-garden","spaceLabel":"Winter Garden","sort":690},{"id":"kids-program-2026-07-20-40","date":"2026-07-20","start":"11:30","end":"12:30","title":"Making props for the music video","originalTitle":"Создание реквизита для клипа","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"kids-program-2026-07-20-41","date":"2026-07-20","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-20-42","date":"2026-07-20","start":"13:00","end":"14:30","title":"Pool games and water battle","originalTitle":"Игры у бассейна, водный баттл","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"kids-program-2026-07-20-43","date":"2026-07-20","start":"14:30","end":"16:00","title":"Preparing the forest quest","originalTitle":"Готовим лесной квест","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":870},{"id":"2026-07-20-05","date":"2026-07-20","start":"15:00","end":"17:00","title":"Quiet lounge / crafts / reading","originalTitle":"Quiet lounge / crafts / reading","track":"creative","trackLabel":"Creative","space":"lounge","spaceLabel":"Lounge","sort":900},{"id":"kids-program-2026-07-20-44","date":"2026-07-20","start":"16:00","end":"17:00","title":"Fruity DJ","originalTitle":"Fruity DJ","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":960},{"id":"kids-program-2026-07-20-45","date":"2026-07-20","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"2026-07-20-06","date":"2026-07-20","start":"17:30","end":"19:30","title":"Dinner","originalTitle":"Dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1050},{"id":"kids-program-2026-07-20-46","date":"2026-07-20","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"kids-program-2026-07-20-47","date":"2026-07-20","start":"19:00","end":"20:30","title":"Cartoons / lounge","originalTitle":"Мультфильмы в беседке / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-20-08","date":"2026-07-20","start":"20:30","end":"22:30","title":"Mass practice / ecstatic / body","originalTitle":"Mass practice / ecstatic / body","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":1230},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-21","date":"2026-07-21","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-21-01","date":"2026-07-21","start":"08:00","end":"09:00","title":"Morning practice","originalTitle":"Morning practice","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-21-02","date":"2026-07-21","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-21-48","date":"2026-07-21","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"kids-program-2026-07-21-49","date":"2026-07-21","start":"10:30","end":"11:30","title":"Balloon modelling workshop","originalTitle":"МК фигурки из длинных шариков","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":630},{"id":"2026-07-21-04","date":"2026-07-21","start":"11:00","end":"13:00","title":"AI / vibe coding / systems","originalTitle":"AI / vibe coding / systems","track":"useful","trackLabel":"Useful","space":"lounge","spaceLabel":"Lounge","sort":660},{"id":"kids-program-2026-07-21-50","date":"2026-07-21","start":"11:30","end":"12:30","title":"Music video shoot and walk","originalTitle":"Съемка клипа + прогулка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"kids-program-2026-07-21-51","date":"2026-07-21","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-21-52","date":"2026-07-21","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"2026-07-21-05","date":"2026-07-21","start":"14:30","end":"16:30","title":"Money / habits / tools people live by","originalTitle":"Money / habits / tools people live by","track":"useful","trackLabel":"Useful","space":"winter-garden","spaceLabel":"Winter Garden","sort":870},{"id":"kids-program-2026-07-21-53","date":"2026-07-21","start":"16:00","end":"17:00","title":"Forest quest","originalTitle":"Проходим лесной квест","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":960},{"id":"kids-program-2026-07-21-54","date":"2026-07-21","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"2026-07-21-06","date":"2026-07-21","start":"17:30","end":"19:30","title":"Dinner","originalTitle":"Dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1050},{"id":"kids-program-2026-07-21-55","date":"2026-07-21","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"kids-program-2026-07-21-56","date":"2026-07-21","start":"19:00","end":"20:30","title":"Cartoons / lounge","originalTitle":"Мультфильмы в беседке / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-21-08","date":"2026-07-21","start":"20:30","end":"23:00","title":"Grisha: music session","originalTitle":"Гриша: музыкальная сессия","track":"music","trackLabel":"Music","space":"lagar","spaceLabel":"Lagar","sort":1230},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-22","date":"2026-07-22","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-22-01","date":"2026-07-22","start":"08:00","end":"09:00","title":"Pool yoga / breath","originalTitle":"Pool yoga / breath","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-22-02","date":"2026-07-22","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-22-57","date":"2026-07-22","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"2026-07-22-04","date":"2026-07-22","start":"11:00","end":"13:00","title":"Whiteboard block A","originalTitle":"Whiteboard block A","track":"open","trackLabel":"Open / Whiteboard","space":"lounge","spaceLabel":"Lounge","sort":660},{"id":"kids-program-2026-07-22-58","date":"2026-07-22","start":"11:30","end":"12:30","title":"Character collage workshop","originalTitle":"МК \"Коллаж-персонаж\"","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":690},{"id":"kids-program-2026-07-22-59","date":"2026-07-22","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-22-60","date":"2026-07-22","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"2026-07-22-05","date":"2026-07-22","start":"14:30","end":"16:30","title":"Whiteboard block B","originalTitle":"Whiteboard block B","track":"open","trackLabel":"Open / Whiteboard","space":"winter-garden","spaceLabel":"Winter Garden","sort":870},{"id":"2026-07-22-06","date":"2026-07-22","start":"16:30","end":"18:00","title":"Pool / lounge social","originalTitle":"Pool / lounge social","track":"music","trackLabel":"Music","space":"pool-deck","spaceLabel":"Pool Deck","sort":990},{"id":"kids-program-2026-07-22-61","date":"2026-07-22","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"kids-program-2026-07-22-62","date":"2026-07-22","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"2026-07-22-07","date":"2026-07-22","start":"18:00","end":"20:00","title":"Dinner","originalTitle":"Dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1080},{"id":"kids-program-2026-07-22-63","date":"2026-07-22","start":"19:00","end":"20:30","title":"Cartoons / lounge","originalTitle":"Мультфильмы в беседке / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-22-09","date":"2026-07-22","start":"19:30","end":"23:00","title":"Film night: kids 19:30, adults after","originalTitle":"Film night: kids 19:30, adults after","track":"creative","trackLabel":"Creative","space":"lounge","spaceLabel":"Lounge","sort":1170},{"id":"doma-evening-cacao-handpan-2026-07-22","date":"2026-07-22","start":"20:30","end":"22:00","title":"DOMA Evening Experience: Cacao ceremony + handpan concert","originalTitle":"DOMA Evening Experience: Cacao ceremony + handpan concert","track":"ritual","trackLabel":"Ritual","space":"lagar","spaceLabel":"Lagar","sort":1230},{"id":"anna-chebotareva-gaga-animal-flow-2026-07-23","date":"2026-07-23","start":"08:00","end":"09:00","title":"Gaga Session + Animal Flow Movement","originalTitle":"Gaga Session + Animal Flow Movement","track":"wellness","trackLabel":"Wellness","space":"lagar","spaceLabel":"Lagar","sort":480},{"id":"2026-07-23-01","date":"2026-07-23","start":"08:00","end":"09:00","title":"Morning closing practice","originalTitle":"Morning closing practice","track":"wellness","trackLabel":"Wellness","space":"atmos-yoga-deck","spaceLabel":"ATMOS Yoga Deck","sort":480},{"id":"2026-07-23-02","date":"2026-07-23","start":"08:30","end":"11:00","title":"Breakfast","originalTitle":"Breakfast","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-23-64","date":"2026-07-23","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"kids-program-2026-07-23-65","date":"2026-07-23","start":"10:30","end":"11:30","title":"Jewellery and bracelet workshop","originalTitle":"МК создаем украшения / браслеты","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":630},{"id":"2026-07-23-04","date":"2026-07-23","start":"11:00","end":"13:00","title":"Open integrations / last conversations","originalTitle":"Open integrations / last conversations","track":"open","trackLabel":"Open / Whiteboard","space":"lounge","spaceLabel":"Lounge","sort":660},{"id":"kids-program-2026-07-23-66","date":"2026-07-23","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-23-67","date":"2026-07-23","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"2026-07-23-05","date":"2026-07-23","start":"15:00","end":"17:00","title":"Kids and parents quiz","originalTitle":"Детско-родительская викторина","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":900},{"id":"2026-07-23-08","date":"2026-07-23","start":"17:00","end":"18:00","title":"Closing ceremony: Vera / bracelets","originalTitle":"Closing ceremony: Vera / bracelets","track":"ritual","trackLabel":"Ritual","space":"lagar","spaceLabel":"Lagar","sort":1020},{"id":"kids-program-2026-07-23-68","date":"2026-07-23","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"kids-program-2026-07-23-69","date":"2026-07-23","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"2026-07-23-06","date":"2026-07-23","start":"18:00","end":"20:00","title":"Final dinner","originalTitle":"Final dinner","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":1080},{"id":"kids-program-2026-07-23-70","date":"2026-07-23","start":"19:00","end":"20:30","title":"Family jam / lounge","originalTitle":"Семейный джем / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140},{"id":"2026-07-23-09","date":"2026-07-23","start":"20:30","end":"00:00","title":"Final dancing / gradual music ramp-up","originalTitle":"Final dancing / gradual music ramp-up","track":"music","trackLabel":"Music","space":"lagar","spaceLabel":"Lagar","sort":1230},{"id":"2026-07-24-01","date":"2026-07-24","start":"08:30","end":"11:00","title":"Breakfast / departures","originalTitle":"Breakfast / departures","track":"food","trackLabel":"Food","space":"main-hall","spaceLabel":"Main Hall","sort":510},{"id":"kids-program-2026-07-24-71","date":"2026-07-24","start":"10:00","end":"10:30","title":"Disco warm-up","originalTitle":"Диско-зарядка","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"2026-07-24-02","date":"2026-07-24","start":"10:00","end":"12:00","title":"Kids goodbye / pickup","originalTitle":"Kids goodbye / pickup","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":600},{"id":"2026-07-24-03","date":"2026-07-24","start":"11:00","end":"13:00","title":"Checkout / decompression","originalTitle":"Checkout / decompression","track":"open","trackLabel":"Open / Whiteboard","space":"lounge","spaceLabel":"Lounge","sort":660},{"id":"kids-program-2026-07-24-72","date":"2026-07-24","start":"12:30","end":"13:00","title":"Kids lunch","originalTitle":"Детский обед","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":750},{"id":"kids-program-2026-07-24-73","date":"2026-07-24","start":"13:00","end":"14:30","title":"Pool games","originalTitle":"Игры у бассейна","track":"kids","trackLabel":"Kids","space":"pool-deck","spaceLabel":"Pool Deck","sort":780},{"id":"kids-program-2026-07-24-74","date":"2026-07-24","start":"17:00","end":"18:00","title":"Kids dinner","originalTitle":"Детский ужин","track":"kids","trackLabel":"Kids","space":"main-hall","spaceLabel":"Main Hall","sort":1020},{"id":"kids-program-2026-07-24-75","date":"2026-07-24","start":"18:00","end":"19:00","title":"Daily reflection: reading and conversation","originalTitle":"Рефлексия дня. Читаем, общаемся","track":"kids","trackLabel":"Kids","space":"wood-terrace","spaceLabel":"Wood Terrace","sort":1080},{"id":"kids-program-2026-07-24-76","date":"2026-07-24","start":"19:00","end":"20:30","title":"Music video premiere and kids disco / lounge","originalTitle":"Презентация клипа. Детскотека / лаундж","track":"kids","trackLabel":"Kids","space":"lounge","spaceLabel":"Lounge","sort":1140}]}</script>
+  <script>
+    const data = JSON.parse(document.getElementById('program-data').textContent);
+    const startHour = 7;
+    const endHour = 24;
+    const slots = Array.from({ length: (endHour - startHour) * 2 }, (_, index) => startHour * 60 + index * 30);
+    const state = {
+      activeDate: 'all',
+      view: 'grid',
+      query: '',
+      tracks: new Set(Object.keys(data.tracks)),
+      spaces: new Set(data.spaces.map((space) => space.key))
+    };
+
+    const trackFilters = document.getElementById('trackFilters');
+    const spaceFilters = document.getElementById('spaceFilters');
+    const dayTabs = document.getElementById('dayTabs');
+    const board = document.getElementById('board');
+    const boardWrap = document.getElementById('boardWrap');
+    const listWrap = document.getElementById('listWrap');
+
+    document.getElementById('generatedAt').textContent = new Date(data.generatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function formatSlot(value) {
+      const hour = Math.floor(value / 60);
+      const minute = value % 60;
+      return String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+    }
+
+    function rowStart(event) {
+      const [h, m] = event.start.split(':').map(Number);
+      return 2 + Math.max(0, Math.floor(((h * 60 + (m || 0)) - startHour * 60) / 30));
+    }
+
+    function rowSpan(event) {
+      const [sh, sm] = event.start.split(':').map(Number);
+      const [eh, em] = event.end.split(':').map(Number);
+      const start = sh * 60 + (sm || 0);
+      let end = eh * 60 + (em || 0);
+      if (end === 0 && event.end === '00:00') end = 24 * 60;
+      return Math.max(1, Math.ceil((end - start) / 30));
+    }
+
+    function eventMatches(event) {
+      const query = state.query.trim().toLowerCase();
+      if (!state.tracks.has(event.track)) return false;
+      if (!state.spaces.has(event.space)) return false;
+      if (state.activeDate !== 'all' && event.date !== state.activeDate) return false;
+      if (query && ![event.title, event.trackLabel, event.spaceLabel].join(' ').toLowerCase().includes(query)) return false;
+      return true;
+    }
+
+    function visibleEvents() {
+      return data.events.filter(eventMatches);
+    }
+
+    function renderFilters() {
+      trackFilters.innerHTML = Object.entries(data.tracks).map(([key, track]) => {
+        return '<label class="chip"><input type="checkbox" data-filter="track" value="' + esc(key) + '" ' + (state.tracks.has(key) ? 'checked' : '') + '><span class="dot" style="--dot:' + esc(track.color) + '"></span>' + esc(track.label) + '</label>';
+      }).join('');
+      spaceFilters.innerHTML = data.spaces.map((space) => {
+        return '<label class="chip"><input type="checkbox" data-filter="space" value="' + esc(space.key) + '" ' + (state.spaces.has(space.key) ? 'checked' : '') + '>' + esc(space.label) + '</label>';
+      }).join('');
+      document.querySelectorAll('[data-filter]').forEach((input) => {
+        input.addEventListener('change', () => {
+          const set = input.dataset.filter === 'track' ? state.tracks : state.spaces;
+          if (input.checked) set.add(input.value);
+          else set.delete(input.value);
+          render();
+        });
+      });
+    }
+
+    function renderDays() {
+      const allCount = data.events.filter(event => state.tracks.has(event.track) && state.spaces.has(event.space)).length;
+      dayTabs.innerHTML = '<button class="day-tab ' + (state.activeDate === 'all' ? 'is-active' : '') + '" data-date="all"><strong>All</strong><span>' + allCount + ' events</span></button>' +
+        data.days.map((day) => {
+          const count = data.events.filter((event) => event.date === day.date && state.tracks.has(event.track) && state.spaces.has(event.space)).length;
+          return '<button class="day-tab ' + (state.activeDate === day.date ? 'is-active' : '') + '" data-date="' + esc(day.date) + '"><strong>' + esc(day.dow) + ' ' + esc(day.day) + '</strong><span>' + esc(day.phase) + ' · ' + count + '</span></button>';
+        }).join('');
+      dayTabs.querySelectorAll('[data-date]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.activeDate = button.dataset.date;
+          render();
+        });
+      });
+    }
+
+    function renderBoard() {
+      const daysToRender = state.activeDate === 'all' ? data.days : data.days.filter((day) => day.date === state.activeDate);
+      if (state.activeDate === 'all') {
+        boardWrap.style.display = 'none';
+        return;
+      }
+      boardWrap.style.display = state.view === 'grid' ? 'block' : 'none';
+      const cells = [];
+      cells.push('<div class="corner" style="grid-column:1;grid-row:1;"></div>');
+      data.spaces.forEach((space, index) => {
+        cells.push('<div class="space-head" style="grid-column:' + (index + 2) + ';grid-row:1;"><strong>' + esc(space.label) + '</strong><span>' + esc(space.note) + '</span></div>');
+      });
+      slots.forEach((slot, rowIndex) => {
+        const time = formatSlot(slot);
+        cells.push('<div class="time" style="grid-column:1;grid-row:' + (rowIndex + 2) + ';">' + (slot % 60 === 0 ? esc(time) : '') + '</div>');
+        data.spaces.forEach((space, columnIndex) => {
+          cells.push('<div class="cell ' + (slot % 60 === 0 ? 'hour' : '') + '" style="grid-column:' + (columnIndex + 2) + ';grid-row:' + (rowIndex + 2) + ';"></div>');
+        });
+      });
+      visibleEvents().filter((event) => event.date === daysToRender[0]?.date).forEach((event) => {
+        const column = data.spaces.findIndex((space) => space.key === event.space) + 2;
+        if (column < 2) return;
+        const track = data.tracks[event.track] || data.tracks.open;
+        cells.push('<article class="event" style="--track:' + esc(track.color) + ';grid-column:' + column + ';grid-row:' + rowStart(event) + ' / span ' + rowSpan(event) + ';">' +
+          '<div class="event-time">' + esc(event.start) + '–' + esc(event.end) + '</div>' +
+          '<div class="event-title">' + esc(event.title) + '</div>' +
+          '<div class="event-meta"><span class="dot" style="--dot:' + esc(track.color) + '"></span>' + esc(track.label) + '</div>' +
+        '</article>');
+      });
+      board.innerHTML = cells.join('');
+    }
+
+    function renderList() {
+      listWrap.style.display = state.view === 'list' || state.activeDate === 'all' ? 'block' : 'none';
+      const events = visibleEvents();
+      if (!events.length) {
+        listWrap.innerHTML = '<div class="empty">No events match the current filters.</div>';
+        return;
+      }
+      const daysToRender = state.activeDate === 'all' ? data.days : data.days.filter((day) => day.date === state.activeDate);
+      listWrap.innerHTML = daysToRender.map((day) => {
+        const dayEvents = events.filter((event) => event.date === day.date);
+        if (!dayEvents.length) return '';
+        return '<section class="day-block"><h2 class="day-heading">' + esc(day.dow) + ' ' + esc(day.day) + ' · ' + esc(day.phase) + '</h2>' +
+          dayEvents.map((event) => {
+            const track = data.tracks[event.track] || data.tracks.open;
+            return '<article class="list-event">' +
+              '<div class="list-time">' + esc(event.start) + '–' + esc(event.end) + '</div>' +
+              '<div><div class="list-title">' + esc(event.title) + '</div>' +
+              '<div class="list-meta"><span>' + esc(event.spaceLabel) + '</span><span>·</span><span><span class="dot" style="--dot:' + esc(track.color) + ';display:inline-block;vertical-align:-1px;margin-right:5px;"></span>' + esc(track.label) + '</span></div></div>' +
+            '</article>';
+          }).join('') + '</section>';
+      }).join('') || '<div class="empty">No events match the current filters.</div>';
+    }
+
+    function render() {
+      renderDays();
+      renderBoard();
+      renderList();
+      document.getElementById('gridView').setAttribute('aria-pressed', state.view === 'grid');
+      document.getElementById('listView').setAttribute('aria-pressed', state.view === 'list');
+    }
+
+    document.getElementById('search').addEventListener('input', (event) => {
+      state.query = event.target.value;
+      render();
+    });
+    document.getElementById('gridView').addEventListener('click', () => { state.view = 'grid'; if (state.activeDate === 'all') state.activeDate = data.days[0].date; render(); });
+    document.getElementById('listView').addEventListener('click', () => { state.view = 'list'; render(); });
+    document.getElementById('showAll').addEventListener('click', () => {
+      state.tracks = new Set(Object.keys(data.tracks));
+      state.spaces = new Set(data.spaces.map((space) => space.key));
+      renderFilters();
+      render();
+    });
+    document.getElementById('hideFood').addEventListener('click', () => {
+      state.tracks.delete('food');
+      renderFilters();
+      render();
+    });
+    document.getElementById('hideKids').addEventListener('click', () => {
+      state.tracks.delete('kids');
+      renderFilters();
+      render();
+    });
+
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
