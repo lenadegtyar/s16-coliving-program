@@ -215,6 +215,20 @@
     .event-dialog-section { margin-top: 18px; }
     .event-dialog-section h3 { margin: 0 0 6px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
     .event-dialog-section p { margin: 0; white-space: pre-wrap; line-height: 1.55; }
+    .event-dialog-map {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .55);
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .event-dialog-map:hover { border-color: var(--accent); color: var(--accent); }
     .dialog-close { flex: 0 0 auto; }
     @media (max-width: 820px) {
       .shell { padding: 18px; }
@@ -296,6 +310,7 @@
       <section class="event-dialog-section">
         <h3 id="eventDialogAboutTitle">Описание</h3>
         <p id="eventDialogDescription"></p>
+        <a class="event-dialog-map" id="eventDialogMap" href="#" target="_blank" rel="noopener">Карта площадки</a>
       </section>
     </div>
   </div>
@@ -335,6 +350,7 @@
         apiUnavailable: 'live API недоступен',
         hostedBy: 'Ведёт',
         about: 'Описание',
+        openMap: 'Карта площадки',
         detailsComingSoon: 'Описание скоро появится.',
         close: 'Закрыть'
       },
@@ -362,6 +378,7 @@
         apiUnavailable: 'live API unavailable',
         hostedBy: 'Hosted by',
         about: 'About',
+        openMap: 'Open location map',
         detailsComingSoon: 'Details coming soon.',
         close: 'Close'
       }
@@ -449,6 +466,7 @@
     const eventDialogHostWrap = document.getElementById('eventDialogHostWrap');
     const eventDialogHost = document.getElementById('eventDialogHost');
     const eventDialogDescription = document.getElementById('eventDialogDescription');
+    const eventDialogMap = document.getElementById('eventDialogMap');
     const searchInput = document.getElementById('search');
 
     function esc(value) {
@@ -502,6 +520,7 @@
       document.getElementById('closeEventDialog').textContent = t('close');
       document.getElementById('eventDialogHostTitle').textContent = t('hostedBy');
       document.getElementById('eventDialogAboutTitle').textContent = t('about');
+      eventDialogMap.textContent = t('openMap');
     }
 
     function publicCopyKey(event) {
@@ -647,6 +666,10 @@
       eventDialogHostWrap.style.display = host ? 'block' : 'none';
       eventDialogHost.textContent = host;
       eventDialogDescription.textContent = (event.description || '').trim() || t('detailsComingSoon');
+      const mapUrl = (event.mapUrl || '').trim();
+      eventDialogMap.style.display = mapUrl ? 'inline-flex' : 'none';
+      eventDialogMap.href = mapUrl || '#';
+      eventDialogMap.textContent = event.mapLabel ? t('openMap') + ': ' + event.mapLabel : t('openMap');
       eventDialog.classList.add('is-open');
     }
 
