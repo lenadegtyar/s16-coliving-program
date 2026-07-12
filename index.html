@@ -199,7 +199,6 @@
       border-radius: 18px;
       background: rgba(255,250,241,.7);
     }
-    .footer-note { margin: 18px 4px 0; color: var(--muted); font-size: 12px; }
     .event-dialog {
       position: fixed;
       inset: 0;
@@ -304,7 +303,6 @@
       <div class="board" id="board"></div>
     </section>
     <section class="list-wrap" id="listWrap"></section>
-    <p class="footer-note">Data source: <span id="generatedAt"></span>. This page is read-only; changing filters affects only your view.</p>
   </div>
 
   <div class="event-dialog" id="eventDialog" role="dialog" aria-modal="true" aria-labelledby="eventDialogTitle">
@@ -375,10 +373,6 @@
         spaces: 'Пространства',
         all: 'Все',
         events: 'событий',
-        dataSourceLive: 'live API, данные обновлены',
-        dataSourceSnapshot: 'локальная копия, собрана',
-        checked: 'проверено',
-        apiUnavailable: 'live API недоступен',
         hostedBy: 'Ведёт',
         about: 'Описание',
         openMap: 'Карта площадки',
@@ -405,10 +399,6 @@
         spaces: 'Spaces',
         all: 'All',
         events: 'events',
-        dataSourceLive: 'live API, data updated',
-        dataSourceSnapshot: 'embedded snapshot, generated',
-        checked: 'checked',
-        apiUnavailable: 'live API unavailable',
         hostedBy: 'Hosted by',
         about: 'About',
         openMap: 'Open location map',
@@ -493,7 +483,6 @@
     const board = document.getElementById('board');
     const boardWrap = document.getElementById('boardWrap');
     const listWrap = document.getElementById('listWrap');
-    const generatedAt = document.getElementById('generatedAt');
     const refreshData = document.getElementById('refreshData');
     const eventDialog = document.getElementById('eventDialog');
     const eventDialogTitle = document.getElementById('eventDialogTitle');
@@ -614,24 +603,6 @@
       };
     }
 
-    function formatDateTime(value) {
-      if (!value) return 'unknown';
-      return new Date(value).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-    }
-
-    function formatCheckedTime(value) {
-      return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    }
-
-    function updateGeneratedAt(source, errorMessage) {
-      const checkedAt = formatCheckedTime(new Date().toISOString());
-      if (source === 'live') {
-        generatedAt.textContent = t('dataSourceLive') + ' ' + formatDateTime(data.sourceUpdatedAt || data.generatedAt) + '; ' + t('checked') + ' ' + checkedAt;
-        return;
-      }
-      generatedAt.textContent = t('dataSourceSnapshot') + ' ' + formatDateTime(data.generatedAt) + '; ' + t('checked') + ' ' + checkedAt + (errorMessage ? ' — ' + t('apiUnavailable') + ': ' + errorMessage : '');
-    }
-
     function reconcileSet(currentSet, availableKeys) {
       const available = new Set(availableKeys);
       const kept = [...currentSet].filter((key) => available.has(key));
@@ -650,7 +621,6 @@
       if (state.activeDate !== 'all' && !data.days.some((day) => day.date === state.activeDate)) {
         state.activeDate = state.view === 'grid' ? (data.days[0]?.date || 'all') : 'all';
       }
-      updateGeneratedAt(source, errorMessage);
       renderFilters();
       render();
     }
@@ -668,7 +638,6 @@
         applyProgramData(liveData, 'live', null, options);
       } catch (error) {
         console.warn('Using embedded program snapshot because live API failed:', error);
-        updateGeneratedAt('snapshot', error.message);
       } finally {
         refreshData.disabled = false;
         refreshData.textContent = t('updated');
